@@ -7,9 +7,10 @@ The current Vagrant configuration performs the following:
 1. Runs Ubunty box
 2. Installs and configures all software necessary for Magento 2
 3. Links your `../magento2` folder to `/var/www/magento2` folder on VM
-3.1. Linked via Samba for Windows and via NFS for others
+  1. Linked via Samba for Windows and via NFS for others
 4. Runs `composer install` in Magento 2 folder
 5. Installs the Magento 2 application
+  1. Deploys static view files for better performance
 
 ## Usage
 
@@ -25,6 +26,15 @@ To install, configure and run the Magento VM, you need to launch virtualbox and 
 cd vagrant.magento2 # empty folder for the Vagrant configuration
 git clone https://github.com/buskamuza/magento2-vagrant.git .
 vagrant up
+```
+
+### Magento 2 Folder
+
+By default Vagrant assumes that your Magento 2 code base is located in `../magento2` folder relatively to your vagrant folder (`vagrant.magento2` in the above example).
+
+If your Magento code base is located in different place, update the following line in `Vagrantfile`:
+```
+@magento2_path='../magento2'
 ```
 
 ### Hostname
@@ -87,22 +97,6 @@ also available db user/password: root/password
 Magento admin user/password: admin/iamtheadmin
 ```
 
-## Troubleshooting
-
-If the installation terminates at any time, you can run it again using the following command:
-```
-vagrant provision
-```
-
-## Removing the Installation
-
-If the installation terminates at any time, or you want to get rid of the VM, you can use 
-
-``` 
-vagrant destroy
-```
-from inside the Magento 2 product folder.
-
 ## Skip Magento 2 Installation
 
 ### Skip Installation for Running VM
@@ -121,6 +115,29 @@ config.vm.provision "install", type: "shell", path: "install.sh"
  ```
  
 Now you can run `vagrant up`, as usual. Magento 2 application will not be installed.
+
+## Troubleshooting
+
+If the installation terminates at any time, you can run it again using the following command:
+```
+vagrant provision
+```
+
+## Removing the Installation
+
+If the installation terminates at any time, or you want to get rid of the VM, you can use 
+
+``` 
+vagrant destroy
+```
+from inside the Magento 2 product folder.
+
+## Samba Issues on Windows
+
+Vagrant doesn't remove shared folders when you destroy a VM. It also doesn't use already existing shared folders.
+So, if you start installation multiple times, you may get multiple shared folders for the same folder.
+Review list of shared folders via `net share` and remove unnecessary ones using `net share NAME /delete` command.
+See [Vagrant SMB](https://docs.vagrantup.com/v2/synced-folders/smb.html for more information.)
 
 ## Related Repositories
 
