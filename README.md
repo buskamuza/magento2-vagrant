@@ -1,24 +1,14 @@
-# Vagrant for magento/product-community-edition
+# Vagrant for Magento 2 Environment
 
-[magento/product-community-edition](https://packagist.org/packages/magento/product-community-edition) is used to deploy a Magento 2 project from [packages](http://packages.magento.com/).
-
-See Alan Kent's post [REDUCING MAGENTO 2 INSTALL PAIN THROUGH VIRTUALIZATION](https://alankent.wordpress.com/2014/12/21/reducing-magento-2-install-pain-through-virtualization/), where he describes two different strategies of using Magento 2 code:
-> ... there are two different ways that developers are likely to interact with the Magento 2 code base now with the public GitHub repository now accepting pull requests.
-
-> 1. Developers wishing to contribute to the Magento 2 code base (e.g. to submit a pull request with a bug fix) will clone the Magento 2 repository.
-
-> 2. Developers building a customer production site should not clone the Magento 2 repository – they should instead use the officially released Composer packages (with version numbers), downloaded via Composer. They are also likely to make a number of local customizations that they would manage for that specific site.
-
-In his post, Alan touches on the first scenario while this Vagrant configuration covers the second one. I'd also add a third scenario: developers creating their own extensions. I believe that in this scenario, the Magento code base should also be deployed from packages (covered by this configuration).
-
-## What You Get
+Use this Vagrant configuration to get Magento compatible VM. It also links your Magento 2 folder to a folder on the VM and installs the application, so you'll get application ready to work with.
 
 The current Vagrant configuration performs the following:
 
 1. Runs Ubunty box
 2. Installs and configures all software necessary for Magento 2
-3. Downloads Magento 2 code from Composer [packages](http://packages.magento.com/)
-4. Installs all necessary libraries
+3. Links your `../magento2` folder to `/var/www/magento2` folder on VM
+3.1. Linked via Samba for Windows and via NFS for others
+4. Runs `composer install` in Magento 2 folder
 5. Installs the Magento 2 application
 
 ## Usage
@@ -32,26 +22,34 @@ You need to install:
 To install, configure and run the Magento VM, you need to launch virtualbox and then execute the following via command line:
 
 ```
-cd magento2-product # empty folder for the Magento 2 product
-git clone https://github.com/buskamuza/magento2-product-vagrant.git .
+cd vagrant.magento2 # empty folder for the Vagrant configuration
+git clone https://github.com/buskamuza/magento2-vagrant.git .
 vagrant up
 ```
 
 ### Hostname
 
-By default hostname of the Magento web-site is equal to external IP address of the VM that is specified in `Vagrantfile`
+Hostname of the Magento application is determined from hostname of the VM defined in the `Vagrantfile`:
 ```
-config.vm.network :private_network, ip: '192.168.10.11'
-```
-
-If you want to use a specific name for the web-site, create `local.config/hostname` file and specify the name there.
-
-Also you need to update your system `hosts` file with a record that links the VM's IP address and hostname. For example,
-```
-192.168.10.11 magento2.dev
+config.vm.hostname = "magento2.ce.dev"
 ```
 
-Where `192.168.10.11` is IP address specified in `Vagrantfile` and `magento2.dev` is hostname you want to use.
+Change this value in the `Vagrantfile`, if you want to use different hostname.
+
+If by some reason, Vagrant can't determine hostname of the VM, it will use its IP address (also specified in `Vagrantfile`).
+
+Also you need to update your system `hosts` file with a record that links IP address and hostname of the VM.
+For the following `Vagrantfile`
+```
+...
+config.vm.network :private_network, ip: '192.168.10.12'
+config.vm.hostname = "magento2.ce.dev"
+...
+```
+Specify the following in your `hosts` file:
+```
+192.168.10.12    magento2.dev
+```
 
 ### GitHub Limitations
 
@@ -71,8 +69,8 @@ Installing GitHub OAuth token from /vagrant/local.config/github.oauth.token
 Upon a successful installation, you'll see the location and URL of the newly-installed Magento 2 application:
 ```
 Installed Magento application in /var/www/magento2
-Access front-end at http://192.168.10.11/
-Access back-end at http://192.168.10.11/admin/
+Access front-end at http://magento2.ce.dev/
+Access back-end at http://magento2.ce.dev/admin/
 ```
 
 `/var/www/magento2` is a path to your Magento installation on the VM.
@@ -89,6 +87,13 @@ also available db user/password: root/password
 Magento admin user/password: admin/iamtheadmin
 ```
 
+## Troubleshooting
+
+If the installation terminates at any time, you can run it again using the following command:
+```
+vagrant provision
+```
+
 ## Removing the Installation
 
 If the installation terminates at any time, or you want to get rid of the VM, you can use 
@@ -98,6 +103,24 @@ vagrant destroy
 ```
 from inside the Magento 2 product folder.
 
+## Skip Magento 2 Installation
+
+### Skip Installation for Running VM
+By default, when you run `vagrant provision`, it installs Magento 2 application.
+If you want to skip it, use the following command instead:
+```
+vagrant provision --provision-with=bootstrap
+```
+
+### Skip Installation for New VM
+By default, when you run `vagrant up` for the first time, it installs Magento 2 application.
+Due to a Vagrant bug, `--provision-with` option doesn't work correctly with `vagrant up`.
+If you want to setup only environment without installed application, comment the following line in `Vagrantfile`:
+ ```
+config.vm.provision "install", type: "shell", path: "install.sh"
+ ```
+ 
+Now you can run `vagrant up`, as usual. Magento 2 application will not be installed.
 
 ## Related Repositories
 
